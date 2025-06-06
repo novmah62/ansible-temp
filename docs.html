@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hướng dẫn Ansible Tương tác</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-block {
+            background-color: #1f2937;
+            color: #d1d5db;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: #4b5563;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #6b7280;
+        }
+        .dir-structure {
+            background-color: #f3f4f6;
+            border-left: 3px solid #60a5fa;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .dir-structure .dir {
+            font-weight: bold;
+        }
+        .dir-structure .file {
+            margin-left: 1.5rem;
+        }
+        .dir-structure .comment {
+            color: #6b7280;
+            margin-left: 1rem;
+        }
+        #mobile-menu-button {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            #sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                z-index: 40;
+            }
+            #sidebar.open {
+                transform: translateX(0);
+            }
+            #mobile-menu-button {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div class="relative min-h-screen md:flex">
+        <div class="fixed top-4 left-4 z-50 md:hidden">
+            <button id="mobile-menu-button" class="bg-white p-2 rounded-md shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </div>
+
+        <aside id="sidebar" class="bg-white text-slate-600 w-64 space-y-6 py-7 px-2 absolute inset-y-0 left-0 transform md:relative md:translate-x-0 transition duration-200 ease-in-out shadow-md">
+            <a href="#" class="text-slate-900 flex items-center space-x-2 px-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+                </svg>
+                <span class="text-2xl font-extrabold">Ansible Guide</span>
+            </a>
+            <nav id="nav-menu">
+            </nav>
+        </aside>
+
+        <main class="flex-1 p-6 md:p-10">
+            <div id="content-area">
+                </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const contentData = [
+                {
+                    id: 'intro',
+                    title: 'Giới thiệu Ansible',
+                    content: `
+                        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">Ansible: Công cụ Tự động hóa IT</h1>
+                        <p class="text-lg text-slate-600 mb-6">Ansible là một công cụ mã nguồn mở mạnh mẽ, được sử dụng để tự động hóa các tác vụ IT như cấu hình máy chủ, triển khai ứng dụng, và điều phối các quy trình phức tạp. Nó đơn giản, hiệu quả và không yêu cầu cài đặt phần mềm đặc biệt (agent) trên các máy chủ được quản lý.</p>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                                <h3 class="font-semibold text-xl text-slate-800 mb-2">Đơn giản và dễ đọc</h3>
+                                <p>Sử dụng YAML, một định dạng dữ liệu có cấu trúc rõ ràng, giúp các playbook dễ viết, dễ đọc và dễ chia sẻ ngay cả với những người không chuyên về lập trình.</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                                <h3 class="font-semibold text-xl text-slate-800 mb-2">Không cần Agent (Agentless)</h3>
+                                <p>Ansible giao tiếp với các máy chủ thông qua các giao thức tiêu chuẩn như <span class="font-semibold text-blue-600">SSH</span> cho Linux/Unix và <span class="font-semibold text-blue-600">WinRM</span> cho Windows. Điều này giúp giảm thiểu tài nguyên và đơn giản hóa việc quản lý.</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                                <h3 class="font-semibold text-xl text-slate-800 mb-2">Mạnh mẽ và linh hoạt</h3>
+                                <p>Với hàng trăm module tích hợp sẵn, Ansible có thể quản lý mọi thứ từ người dùng, dịch vụ, gói phần mềm cho đến cơ sở hạ tầng đám mây phức tạp.</p>
+                            </div>
+                           <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                                <h3 class="font-semibold text-xl text-slate-800 mb-2">Yêu cầu cơ bản</h3>
+                                <p>Để bắt đầu, bạn chỉ cần một máy điều khiển (control node) đã cài đặt <span class="font-semibold text-blue-600">Python</span>. Các máy chủ được quản lý (managed nodes) chỉ cần có thể truy cập qua SSH.</p>
+                            </div>
+                        </div>
+                    `
+                },
+                {
+                    id: 'inventory',
+                    title: 'Ansible Inventory',
+                    content: `
+                        <h2 class="text-2xl font-bold text-slate-800 mb-3">Ansible Inventory</h2>
+                        <p class="text-slate-600 mb-4">Inventory là một tệp (thường là INI hoặc YAML) dùng để liệt kê tất cả các máy chủ mà bạn muốn Ansible quản lý. Nó cho phép bạn nhóm các máy chủ lại với nhau và gán các biến cụ thể cho từng máy chủ hoặc nhóm.</p>
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Ví dụ về tệp Inventory (định dạng INI)</h3>
+                        <p class="text-slate-600 mb-2">Đây là một ví dụ cơ bản về cách tổ chức máy chủ thành các nhóm <code class="bg-slate-200 text-red-600 px-1 rounded">[webservers]</code> và <code class="bg-slate-200 text-red-600 px-1 rounded">[dbservers]</code>. Nhóm <code class="bg-slate-200 text-red-600 px-1 rounded">[prod:children]</code> là một nhóm cha chứa các nhóm con khác.</p>
+                        <div class="code-block" data-code-content="[webservers]&#x0A;web1 ansible_host=192.168.1.10 ansible_user=ubuntu&#x0A;web2 ansible_host=192.168.1.11 ansible_user=ubuntu&#x0A;&#x0A;[dbservers]&#x0A;db1 ansible_host=192.168.1.20 ansible_user=ubuntu&#x0A;&#x0A;[prod:children]&#x0A;webservers&#x0A;dbservers">
+                            <button class="copy-btn">Sao chép</button>
+                            <pre><code class="language-ini">[webservers]
+web1 ansible_host=192.168.1.10 ansible_user=ubuntu
+web2 ansible_host=192.168.1.11 ansible_user=ubuntu
+
+[dbservers]
+db1 ansible_host=192.168.1.20 ansible_user=ubuntu
+
+[prod:children]
+webservers
+dbservers</code></pre>
+                        </div>
+                    `
+                },
+                   {
+                    id: 'ad-hoc',
+                    title: 'Lệnh Ad-Hoc',
+                    content: `
+                        <h2 class="text-2xl font-bold text-slate-800 mb-3">Lệnh Ad-Hoc</h2>
+                        <p class="text-slate-600 mb-4">Lệnh Ad-Hoc là cách nhanh nhất để thực thi một tác vụ đơn lẻ trên một hoặc nhiều máy chủ mà không cần viết playbook. Rất hữu ích cho việc kiểm tra nhanh hoặc các tác vụ quản trị đơn giản.</p>
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Cú pháp cơ bản</h3>
+                        <div class="code-block" data-code-content="ansible [group_name] -i [inventory_file] -m [module] -a &quot;[command]&quot;">
+                            <button class="copy-btn">Sao chép</button>
+                            <pre><code class="language-bash"># ansible [group_name] -i [inventory_file] -m [module] -a "[command]"</code></pre>
+                        </div>
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Các tùy chọn thường dùng</h3>
+                        <ul class="list-disc list-inside text-slate-600 space-y-2">
+                           <li><code class="bg-slate-200 text-red-600 px-1 rounded">-b</code>: Chạy lệnh với quyền sudo (<code class="italic">become</code>).</li>
+                           <li><code class="bg-slate-200 text-red-600 px-1 rounded">-l [server_list]</code>: Giới hạn chạy lệnh trên một danh sách máy chủ cụ thể.</li>
+                           <li><code class="bg-slate-200 text-red-600 px-1 rounded">--check</code>: Chế độ chạy thử (dry run), chỉ báo cáo những thay đổi sẽ xảy ra.</li>
+                           <li><code class="bg-slate-200 text-red-600 px-1 rounded">-m ping</code>: Kiểm tra kết nối tới các máy chủ.</li>
+                        </ul>
+                    `
+                },
+                {
+                    id: 'playbook',
+                    title: 'Ansible Playbook',
+                    content: `
+                        <h2 class="text-2xl font-bold text-slate-800 mb-3">Ansible Playbook</h2>
+                        <p class="text-slate-600 mb-4">Playbook là trái tim của Ansible. Đây là các tệp YAML mô tả một tập hợp các tác vụ (tasks) cần được thực thi trên các nhóm máy chủ được chỉ định trong inventory.</p>
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Ví dụ về Playbook</h3>
+                           <p class="text-slate-600 mb-2">Playbook này định nghĩa một "play" có tên "Tên của play", nhắm đến nhóm <code class="bg-slate-200 text-red-600 px-1 rounded">webservers</code> và thực thi hai tác vụ.</p>
+                        <div class="code-block" data-code-content="- name: Tên của play&#x0A;  hosts: webservers&#x0A;  tasks:&#x0A;    - name: Tên task 1&#x0A;      module_name: arguments&#x0A;    - name: Tên task 2&#x0A;      module_name: arguments">
+                            <button class="copy-btn">Sao chép</button>
+                            <pre><code class="language-yaml">- name: Tên của play
+  hosts: webservers
+  tasks:
+    - name: Tên task 1
+      module_name: arguments
+    - name: Tên task 2
+      module_name: arguments</code></pre>
+                        </div>
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Cách chạy Playbook</h3>
+                        <div class="code-block" data-code-content="ansible-playbook -i [inventory_file] [playbook_name].yml">
+                             <button class="copy-btn">Sao chép</button>
+                            <pre><code class="language-bash"># ansible-playbook -i [inventory_file] [playbook_name].yml</code></pre>
+                        </div>
+                           <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Các tùy chọn hữu ích</h3>
+                           <ul class="list-disc list-inside text-slate-600 space-y-2">
+                              <li><code class="bg-slate-200 text-red-600 px-1 rounded">-v</code>, <code class="bg-slate-200 text-red-600 px-1 rounded">-vv</code>, <code class="bg-slate-200 text-red-600 px-1 rounded">-vvv</code>: Chế độ verbose để gỡ lỗi, hiển thị thêm thông tin chi tiết.</li>
+                              <li><code class="bg-slate-200 text-red-600 px-1 rounded">--check</code>: Chế độ chạy thử, không thực hiện thay đổi nào.</li>
+                           </ul>
+                    `
+                },
+                {
+                    id: 'variables',
+                    title: 'Ansible Variables',
+                    content: `
+                        <h2 class="text-2xl font-bold text-slate-800 mb-3">Ansible Variables</h2>
+                        <p class="text-slate-600 mb-4">Biến (Variables) cho phép bạn quản lý các giá trị động và tái sử dụng chúng trong các playbook. Một trong những cách tốt nhất để quản lý biến là tách chúng ra các tệp riêng biệt thay vì viết trực tiếp trong playbook.</p>
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Tổ chức biến theo nhóm (group_vars)</h3>
+                        <p class="text-slate-600 mb-2">Ansible sẽ tự động tải các biến từ các tệp trong thư mục <code class="bg-slate-200 text-red-600 px-1 rounded">group_vars</code>. Tên tệp phải khớp với tên nhóm trong inventory.</p>
+                        <p class="font-semibold text-slate-700">1. Tạo thư mục:</p>
+                        <div class="code-block" data-code-content="mkdir group_vars">
+                            <button class="copy-btn">Sao chép</button>
+                            <pre><code>mkdir group_vars</code></pre>
+                        </div>
+                        <p class="font-semibold text-slate-700">2. Tạo tệp biến cho nhóm 'webservers':</p>
+                        <div class="code-block" data-code-content="nano group_vars/webservers.yml">
+                             <button class="copy-btn">Sao chép</button>
+                            <pre><code>nano group_vars/webservers.yml</code></pre>
+                        </div>
+                        <p class="text-slate-600 mt-4">Cách làm này giúp playbook của bạn sạch sẽ, dễ đọc và dễ bảo trì hơn rất nhiều.</p>
+                    `
+                },
+                {
+                    id: 'modules',
+                    title: 'Ansible Modules',
+                    content: `
+                        <h2 class="text-2xl font-bold text-slate-800 mb-3">Ansible Modules</h2>
+                        <p class="text-slate-600 mb-4">Module là các đơn vị mã thực thi các tác vụ cụ thể trên máy chủ. Ansible có một thư viện module khổng lồ cho hầu hết mọi tác vụ.</p>
+                       
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
+                            <h3 class="text-xl font-semibold text-slate-700 mb-2">Module <code class="text-blue-600">user</code></h3>
+                            <p class="text-slate-600 mb-2">Dùng để quản lý người dùng trên hệ thống (tạo, xóa, sửa đổi).</p>
+                            <div class="code-block" data-code-content="- name: Create deploy user on webservers&#x0A;  hosts: webservers&#x0A;  become: yes&#x0A;  tasks:&#x0A;    - name: Create user deploy&#x0A;      user:&#x0A;        name: deploy&#x0A;        state: present&#x0A;        shell: /bin/bash&#x0A;        create_home: yes&#x0A;        groups: sudo&#x0A;        append: yes">
+                                <button class="copy-btn">Sao chép</button>
+                                <pre><code class="language-yaml">- name: Create deploy user on webservers
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Create user deploy
+      user:
+        name: deploy
+        state: present
+        shell: /bin/bash
+        create_home: yes
+        groups: sudo
+        append: yes</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
+                            <h3 class="text-xl font-semibold text-slate-700 mb-2">Module <code class="text-blue-600">shell</code></h3>
+                            <p class="text-slate-600 mb-2">Thực thi các lệnh shell. Hữu ích khi không có module chuyên dụng cho tác vụ bạn cần.</p>
+                            <div class="code-block" data-code-content="- name: Run Bash script on webservers&#x0A;  hosts: webservers&#x0A;  tasks:&#x0A;    - name: Copy CPU check script&#x0A;      copy:&#x0A;        src: cpu_check.sh&#x0A;        dest: /tmp/cpu_check.sh&#x0A;        mode: '0755'&#x0A;    - name: Run CPU check script&#x0A;      shell: /tmp/cpu_check.sh&#x0A;      register: cpu_output&#x0A;    - name: Debug CPU output&#x0A;      debug:&#x0A;        msg: &quot;{{ cpu_output.stdout }}&quot;">
+                                <button class="copy-btn">Sao chép</button>
+                                <pre><code class="language-yaml">- name: Run Bash script on webservers
+  hosts: webservers
+  tasks:
+    - name: Copy CPU check script
+      copy:
+        src: cpu_check.sh
+        dest: /tmp/cpu_check.sh
+        mode: '0755'
+    - name: Run CPU check script
+      shell: /tmp/cpu_check.sh
+      register: cpu_output
+    - name: Debug CPU output
+      debug:
+        msg: "{{ cpu_output.stdout }}"</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                            <h3 class="text-xl font-semibold text-slate-700 mb-2">Module <code class="text-blue-600">file</code></h3>
+                            <p class="text-slate-600 mb-2">Quản lý tệp và thư mục (tạo, xóa, thay đổi quyền, chủ sở hữu).</p>
+                            <div class="code-block" data-code-content="- name: Create app directory&#x0A;  hosts: webservers&#x0A;  become: yes&#x0A;  tasks:&#x0A;    - name: Create /var/app directory&#x0A;      file:&#x0A;        path: /var/app&#x0A;        state: directory&#x0A;        mode: '0755'&#x0A;        owner: deploy&#x0A;        group: deploy">
+                                <button class="copy-btn">Sao chép</button>
+                                <pre><code class="language-yaml">- name: Create app directory
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Create /var/app directory
+      file:
+        path: /var/app
+        state: directory
+        mode: '0755'
+        owner: deploy
+        group: deploy</code></pre>
+                            </div>
+                        </div>
+                        <p class="text-slate-600 mt-6">Sử dụng lệnh <code class="bg-slate-200 text-red-600 px-1 rounded">ansible-doc [module_name]</code> để xem tài liệu chi tiết về bất kỳ module nào.</p>
+                    `
+                },
+                {
+                    id: 'roles',
+                    title: 'Ansible Roles',
+                    content: `
+                        <h2 class="text-2xl font-bold text-slate-800 mb-3">Ansible Roles</h2>
+                        <p class="text-slate-600 mb-4">Roles là cách tốt nhất để tổ chức các playbook thành các phần nhỏ, có cấu trúc, dễ quản lý và quan trọng nhất là có thể tái sử dụng. Role giúp tách logic tự động hóa thành các đơn vị độc lập.</p>
+                       
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Cấu trúc thư mục của một Role</h3>
+                        <p class="text-slate-600 mb-2">Một role thường có cấu trúc thư mục chuẩn như sau:</p>
+                        <div class="dir-structure">
+                            <div class="dir">roles/</div>
+                            <div class="dir" style="margin-left: 1.5rem;">nginx/</div>
+                            <div class="file"><span class="font-bold">tasks/</span><span class="comment"># Chứa các task (main.yml là bắt buộc)</span></div>
+                            <div class="file">vars/<span class="comment"># Chứa các biến cho role</span></div>
+                            <div class="file">templates/<span class="comment"># Chứa các file template Jinja2</span></div>
+                            <div class="file">handlers/<span class="comment"># Chứa các handler</span></div>
+                            <div class="file">defaults/<span class="comment"># Chứa các biến mặc định</span></div>
+                            <div class="file">meta/<span class="comment"># Chứa metadata và dependencies</span></div>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Sử dụng Roles trong Playbook</h3>
+                        <p class="text-slate-600 mb-2">Bạn có thể dễ dàng gọi các role đã được định nghĩa trong playbook chính.</p>
+                        <div class="code-block" data-code-content="- name: Deploy full stack&#x0A;  hosts: webservers&#x0A;  become: yes&#x0A;  roles:&#x0A;    - nginx&#x0A;    - mysql">
+                            <button class="copy-btn">Sao chép</button>
+                            <pre><code class="language-yaml">- name: Deploy full stack
+  hosts: webservers
+  become: yes
+  roles:
+    - nginx
+    - mysql</code></pre>
+                        </div>
+                    `
+                },
+                {
+                    id: 'jinja2',
+                    title: 'Templates (Jinja2)',
+                    content: `
+                        <h2 class="text-2xl font-bold text-slate-800 mb-3">Ansible Templates với Jinja2</h2>
+                        <p class="text-slate-600 mb-4">Ansible sử dụng ngôn ngữ template Jinja2 để tạo các tệp cấu hình động. Điều này cho phép bạn chèn các biến, vòng lặp, và câu lệnh điều kiện vào các tệp tĩnh, làm cho chúng linh hoạt hơn. Các tệp template thường có đuôi <code class="bg-slate-200 text-red-600 px-1 rounded">.j2</code>.</p>
+                       
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Các cú pháp Jinja2 cơ bản</h3>
+                        <ul class="list-disc list-inside text-slate-600 space-y-3">
+                            <li>
+                                <code class="bg-slate-200 text-red-600 px-1 rounded">{{ variable }}</code>: Dùng để chèn giá trị của một biến.
+                                <p class="text-sm ml-5 text-slate-500">Ví dụ: <code class="text-red-600">server_name {{ fqdn }};</code></p>
+                            </li>
+                            <li>
+                                <code class="bg-slate-200 text-red-600 px-1 rounded">{% if condition %}...{% endif %}</code>: Dùng cho các câu lệnh điều kiện.
+                                <p class="text-sm ml-5 text-slate-500">Ví dụ: <code class="text-red-600">{% if enable_ssl %}...{% endif %}</code></p>
+                            </li>
+                            <li>
+                                <code class="bg-slate-200 text-red-600 px-1 rounded">{% for item in list %}...{% endfor %}</code>: Dùng cho vòng lặp.
+                                <p class="text-sm ml-5 text-slate-500">Ví dụ: <code class="text-red-600">{% for server in web_servers %}server {{ server }};{% endfor %}</code></p>
+                            </li>
+                        </ul>
+
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Kiểm tra cú pháp</h3>
+                        <p class="text-slate-600 mb-2">Trước khi chạy playbook sử dụng template, bạn nên kiểm tra cú pháp để đảm bảo không có lỗi.</p>
+                        <div class="code-block" data-code-content="ansible-playbook --syntax-check [playbook_name].yml">
+                            <button class="copy-btn">Sao chép</button>
+                            <pre><code class="language-bash"># ansible-playbook --syntax-check [playbook_name].yml</code></pre>
+                        </div>
+                    `
+                },
+                {
+                    id: 'conditionals-loops',
+                    title: 'Conditionals & Loops',
+                    content: `
+                        <h2 class="text-2xl font-bold text-slate-800 mb-3">Conditionals và Loops</h2>
+                        <p class="text-slate-600 mb-4">Đây là những công cụ logic mạnh mẽ giúp playbook của bạn thông minh hơn. Conditionals (<code class="bg-slate-200 text-red-600 px-1 rounded">when</code>) cho phép chạy task dựa trên điều kiện, và Loops (<code class="bg-slate-200 text-red-600 px-1 rounded">loop</code>) giúp lặp lại một task nhiều lần.</p>
+
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
+                            <h3 class="text-xl font-semibold text-slate-700 mb-2">Ví dụ về <code class="text-blue-600">when</code></h3>
+                            <p class="text-slate-600 mb-2">Task này chỉ cài đặt Nginx nếu hệ điều hành thuộc họ "Debian" (như Ubuntu).</p>
+                            <div class="code-block" data-code-content="- name: Install Nginx on Debian&#x0A;  apt:&#x0A;    name: nginx&#x0A;    state: present&#x0A;  when: ansible_os_family == &quot;Debian&quot;">
+                                <button class="copy-btn">Sao chép</button>
+                                <pre><code class="language-yaml">- name: Install Nginx on Debian
+  apt:
+    name: nginx
+    state: present
+  when: ansible_os_family == "Debian"</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                            <h3 class="text-xl font-semibold text-slate-700 mb-2">Ví dụ về <code class="text-blue-600">loop</code></h3>
+                            <p class="text-slate-600 mb-2">Task này sẽ lặp qua danh sách người dùng và tạo thư mục log cho từng người.</p>
+                            <div class="code-block" data-code-content="- name: Create log directories for users&#x0A;  file:&#x0A;    path: &quot;/var/log/nginx/{{ item }}&quot;&#x0A;    state: directory&#x0A;    mode: '0755'&#x0A;  loop:&#x0A;    - user1&#x0A;    - user2&#x0A;    - user3&#x0A;  become: yes">
+                                <button class="copy-btn">Sao chép</button>
+                                <pre><code class="language-yaml">- name: Create log directories for users
+  file:
+    path: "/var/log/nginx/{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - user1
+    - user2
+    - user3
+  become: yes</code></pre>
+                            </div>
+                        </div>
+                        <p class="text-slate-600 mt-6">Để xem tất cả các "facts" (thông tin hệ thống) có sẵn để dùng trong điều kiện <code class="bg-slate-200 text-red-600 px-1 rounded">when</code>, hãy chạy: <code class="bg-slate-200 text-red-600 px-1 rounded">ansible [hostname] -m setup</code>.</p>
+                    `
+                },
+                   {
+                    id: 'error-handling',
+                    title: 'Error Handling',
+                    content: `
+                        <h2 class="text-2xl font-bold text-slate-800 mb-3">Error Handling</h2>
+                        <p class="text-slate-600 mb-4">Xử lý lỗi giúp playbook của bạn chạy ổn định hơn, không bị dừng đột ngột và có thể kiểm soát các sự cố một cách thông minh.</p>
+                       
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Các cơ chế xử lý lỗi chính</h3>
+                        <ul class="list-disc list-inside text-slate-600 space-y-2 mb-6">
+                            <li><code class="bg-slate-200 text-red-600 px-1 rounded">ignore_errors: yes</code>: Bỏ qua lỗi và tiếp tục chạy các task tiếp theo.</li>
+                            <li><code class="bg-slate-200 text-red-600 px-1 rounded">failed_when: [condition]</code>: Tự định nghĩa điều kiện để một task được coi là "thất bại".</li>
+                            <li><code class="bg-slate-200 text-red-600 px-1 rounded">register: [variable]</code> và <code class="bg-slate-200 text-red-600 px-1 rounded">when</code>: Lưu kết quả của một task vào một biến và sau đó sử dụng nó trong điều kiện của task khác.</li>
+                        </ul>
+
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Ví dụ thực tế</h3>
+                        <p class="text-slate-600 mb-2">Playbook này sẽ cố gắng cài đặt Nginx. Nếu thất bại, nó sẽ bỏ qua lỗi, gửi một thông báo debug và không cố gắng tạo file cấu hình.</p>
+                        <div class="code-block" data-code-content="- name: Try to install Nginx&#x0A;  apt:&#x0A;    name: nginx&#x0A;    state: present&#x0A;  become: yes&#x0A;  register: nginx_install&#x0A;  ignore_errors: yes&#x0A;&#x0A;- name: Notify if Nginx install failed&#x0A;  debug:&#x0A;    msg: &quot;Failed to install Nginx on {{ ansible_hostname }}. Check the server!&quot;&#x0A;  when: nginx_install.failed&#x0A;&#x0A;- name: Create Nginx config if install succeeded&#x0A;  template:&#x0A;    src: nginx.conf.j2&#x0A;    dest: /etc/nginx/sites-available/default&#x0A;    mode: '0644'&#x0A;  notify: Restart Nginx&#x0A;  become: yes&#x0A;  when: not nginx_install.failed">
+                            <button class="copy-btn">Sao chép</button>
+                            <pre><code class="language-yaml">- name: Try to install Nginx
+  apt:
+    name: nginx
+    state: present
+  become: yes
+  register: nginx_install
+  ignore_errors: yes
+
+- name: Notify if Nginx install failed
+  debug:
+    msg: "Failed to install Nginx on {{ ansible_hostname }}. Check the server!"
+  when: nginx_install.failed
+
+- name: Create Nginx config if install succeeded
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/default
+    mode: '0644'
+  notify: Restart Nginx
+  become: yes
+  when: not nginx_install.failed</code></pre>
+                        </div>
+                        <p class="text-slate-600 mt-6">Luôn sử dụng <code class="bg-slate-200 text-red-600 px-1 rounded">--check</code> để kiểm tra playbook trước khi chạy thật để hạn chế lỗi.</p>
+                    `
+                },
+                   {
+                    id: 'aws',
+                    title: 'Ansible & AWS',
+                    content: `
+                        <h2 class="text-2xl font-bold text-slate-800 mb-3">Tự động hóa AWS với Ansible</h2>
+                        <p class="text-slate-600 mb-4">Ansible là một công cụ tuyệt vời để tự động hóa việc quản lý tài nguyên trên AWS, từ việc tạo EC2 instance, cấu hình Security Group cho đến triển khai ứng dụng.</p>
+                       
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Yêu cầu</h3>
+                        <p class="text-slate-600 mb-2">Để Ansible có thể tương tác với AWS, bạn cần cài đặt <code class="bg-slate-200 text-red-600 px-1 rounded">boto3</code> và <code class="bg-slate-200 text-red-600 px-1 rounded">botocore</code> trên máy điều khiển:</p>
+                        <div class="code-block" data-code-content="pip install boto3 botocore">
+                            <button class="copy-btn">Sao chép</button>
+                            <pre><code class="language-bash">pip install boto3 botocore</code></pre>
+                        </div>
+                        <p class="text-slate-600 mt-4 mb-4">Bạn cũng cần cấu hình thông tin xác thực AWS (access key, secret key) thông qua biến môi trường hoặc tệp <code class="bg-slate-200 text-red-600 px-1 rounded">~/.aws/credentials</code>.</p>
+
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Ví dụ: Tạo một EC2 Instance</h3>
+                        <p class="text-slate-600 mb-2">Playbook này sử dụng module <code class="bg-slate-200 text-red-600 px-1 rounded">ec2</code> để khởi tạo một instance EC2.</p>
+                        <div class="code-block" data-code-content="- name: Launch a new EC2 instance&#x0A;  hosts: localhost&#x0A;  connection: local&#x0A;  gather_facts: no&#x0A;  tasks:&#x0A;    - name: Launch instance&#x0A;      community.aws.ec2:&#x0A;        key_name: my-ec2-key&#x0A;        instance_type: t2.micro&#x0A;        image: ami-0abcdef1234567890 # Thay thế bằng AMI ID hợp lệ&#x0A;        wait: yes&#x0A;        region: ap-southeast-1&#x0A;        vpc_subnet_id: subnet-xxxxxxxxxxxxxxxxx # Thay thế bằng Subnet ID hợp lệ&#x0A;        assign_public_ip: yes&#x0A;        count: 1&#x0A;        instance_tags:&#x0A;          Name: MyAnsibleInstance&#x0A;      register: ec2_info&#x0A;&#x0A;    - name: Add new instance to host group&#x0A;      ansible.builtin.add_host:&#x0A;        hostname: &quot;{{ item.public_ip }}&quot;&#x0A;        groups: new_instances&#x0A;      loop: &quot;{{ ec2_info.instances }}&quot;&#x0A;&#x0A;    - name: Wait for SSH to be available&#x0A;      ansible.builtin.wait_for:&#x0A;        host: &quot;{{ item.public_dns_name }}&quot;&#x0A;        port: 22&#x0A;        delay: 60&#x0A;        timeout: 320&#x0A;      loop: &quot;{{ ec2_info.instances }}&quot;">
+                            <button class="copy-btn">Sao chép</button>
+                            <pre><code class="language-yaml">- name: Launch a new EC2 instance
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+    - name: Launch instance
+      community.aws.ec2:
+        key_name: my-ec2-key
+        instance_type: t2.micro
+        image: ami-0abcdef1234567890 # Thay thế bằng AMI ID hợp lệ
+        wait: yes
+        region: ap-southeast-1
+        vpc_subnet_id: subnet-xxxxxxxxxxxxxxxxx # Thay thế bằng Subnet ID hợp lệ
+        assign_public_ip: yes
+        count: 1
+        instance_tags:
+          Name: MyAnsibleInstance
+      register: ec2_info
+
+    - name: Add new instance to host group
+      ansible.builtin.add_host:
+        hostname: "{{ item.public_ip }}"
+        groups: new_instances
+      loop: "{{ ec2_info.instances }}"
+
+    - name: Wait for SSH to be available
+      ansible.builtin.wait_for:
+        host: "{{ item.public_dns_name }}"
+        port: 22
+        delay: 60
+        timeout: 320
+      loop: "{{ ec2_info.instances }}"</code></pre>
+                        </div>
+                        <p class="text-slate-600 mt-6">Ansible cung cấp rất nhiều module cho AWS, bạn có thể tìm thấy danh sách đầy đủ trên tài liệu chính thức của Ansible.</p>
+                    `
+                },
+                {
+                    id: 'best-practices',
+                    title: 'Best Practices',
+                    content: `
+                        <h2 class="text-2xl font-bold text-slate-800 mb-3">Best Practices trong Ansible</h2>
+                        <p class="text-slate-600 mb-4">Để viết các playbook hiệu quả, dễ bảo trì và có thể mở rộng, việc tuân thủ các thực hành tốt nhất là rất quan trọng.</p>
+
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">1. Tính bất biến (Idempotence)</h3>
+                        <p class="text-slate-600 mb-4">Mỗi task trong Ansible nên được thiết kế để có thể chạy nhiều lần mà không gây ra side-effects không mong muốn. Tức là, việc chạy lại một playbook đã thành công sẽ không thay đổi trạng thái của hệ thống.</p>
+                        <div class="code-block" data-code-content="- name: Ensure Nginx is installed and running&#x0A;  ansible.builtin.apt:&#x0A;    name: nginx&#x0A;    state: present&#x0A;  notify: Start Nginx service">
+                            <button class="copy-btn">Sao chép</button>
+                            <pre><code class="language-yaml">- name: Ensure Nginx is installed and running
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+  notify: Start Nginx service</code></pre>
+                        </div>
+                        <p class="text-slate-600 mt-2">Module <code class="bg-slate-200 text-red-600 px-1 rounded">apt</code> với <code class="bg-slate-200 text-red-600 px-1 rounded">state: present</code> là idempotent vì nó chỉ cài đặt Nginx nếu nó chưa có.</p>
+
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">2. Kiểm soát phiên bản (Version Control)</h3>
+                        <p class="text-slate-600 mb-4">Luôn lưu trữ các playbook, inventory và các tệp liên quan trong hệ thống kiểm soát phiên bản như Git. Điều này giúp theo dõi thay đổi, cộng tác và phục hồi khi có sự cố.</p>
+
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">3. Sử dụng Roles một cách hiệu quả</h3>
+                        <p class="text-slate-600 mb-4">Roles là xương sống của các dự án Ansible lớn. Chúng giúp tổ chức code logic thành các đơn vị có thể tái sử dụng, dễ đọc và dễ chia sẻ.</p>
+                        <div class="code-block" data-code-content="- name: Apply webserver configuration&#x0A;  hosts: webservers&#x0A;  roles:&#x0A;    - common&#x0A;    - nginx&#x0A;    - application">
+                            <button class="copy-btn">Sao chép</button>
+                            <pre><code class="language-yaml">- name: Apply webserver configuration
+  hosts: webservers
+  roles:
+    - common
+    - nginx
+    - application</code></pre>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">4. Giữ Playbook đơn giản</h3>
+                        <p class="text-slate-600 mb-4">Tránh các playbook quá lớn hoặc quá phức tạp. Chia nhỏ các tác vụ thành các playbook nhỏ hơn, chuyên biệt hơn hoặc sử dụng roles để quản lý độ phức tạp.</p>
+                        <p class="text-slate-600">Áp dụng những thực hành này sẽ cải thiện đáng kể chất lượng và khả năng quản lý của các dự án tự động hóa Ansible của bạn.</p>
+                    `
+                }
+            ];
+
+            const sidebar = document.getElementById('sidebar');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const navMenu = document.getElementById('nav-menu');
+            const contentArea = document.getElementById('content-area');
+
+            // Populate sidebar navigation
+            contentData.forEach(item => {
+                const link = document.createElement('a');
+                link.href = '#';
+                link.classList.add('block', 'py-2.5', 'px-4', 'rounded', 'transition', 'duration-200', 'hover:bg-blue-500', 'hover:text-white', 'font-medium');
+                link.textContent = item.title;
+                link.dataset.id = item.id;
+                navMenu.appendChild(link);
+            });
+
+            // Handle navigation clicks
+            navMenu.addEventListener('click', function (event) {
+                event.preventDefault();
+                const targetId = event.target.dataset.id;
+                if (targetId) {
+                    loadContent(targetId);
+                    // Close sidebar on mobile after selection
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.remove('open');
+                    }
+                }
+            });
+
+            // Load content function
+            function loadContent(id) {
+                const selectedItem = contentData.find(item => item.id === id);
+                if (selectedItem) {
+                    contentArea.innerHTML = selectedItem.content;
+                    // Add copy button functionality to new code blocks
+                    addCopyButtonListeners();
+                }
+            }
+
+            // Function to add copy button event listeners
+            function addCopyButtonListeners() {
+                document.querySelectorAll('.code-block').forEach(codeBlock => {
+                    const copyBtn = codeBlock.querySelector('.copy-btn');
+                    if (copyBtn) {
+                        copyBtn.onclick = function () {
+                            const codeContent = codeBlock.getAttribute('data-code-content');
+                            navigator.clipboard.writeText(codeContent).then(() => {
+                                const originalText = copyBtn.textContent;
+                                copyBtn.textContent = 'Đã sao chép!';
+                                setTimeout(() => {
+                                    copyBtn.textContent = originalText;
+                                }, 2000);
+                            }).catch(err => {
+                                console.error('Failed to copy: ', err);
+                            });
+                        };
+                    }
+                });
+            }
+
+            // Mobile menu toggle
+            mobileMenuButton.addEventListener('click', function () {
+                sidebar.classList.toggle('open');
+            });
+
+            // Load initial content (e.g., introduction)
+            loadContent('intro');
+        });
+    </script>
+</body>
+</html>
