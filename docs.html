@@ -538,6 +538,76 @@ dbservers</code></pre>
                         <p class="text-slate-600 mb-4">Tránh các playbook quá lớn hoặc quá phức tạp. Chia nhỏ các tác vụ thành các playbook nhỏ hơn, chuyên biệt hơn hoặc sử dụng roles để quản lý độ phức tạp.</p>
                         <p class="text-slate-600">Áp dụng những thực hành này sẽ cải thiện đáng kể chất lượng và khả năng quản lý của các dự án tự động hóa Ansible của bạn.</p>
                     `
+                },
+                {
+                    id: 'tower-awx',
+                    title: 'Ansible Tower & AWX',
+                    content: `
+                        <h2 class="text-2xl font-bold text-slate-800 mb-3">Ansible Tower & AWX</h2>
+                        <p class="text-slate-600 mb-4">Ansible Tower và AWX là các giao diện web để quản lý và tự động hóa Ansible. AWX là phiên bản mã nguồn mở của Ansible Tower, cung cấp giao diện người dùng đồ họa (GUI) để quản lý playbook, inventory, và các tác vụ tự động hóa.</p>
+
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Cài đặt AWX</h3>
+                        <p class="text-slate-600 mb-2">AWX có thể được cài đặt thông qua Docker hoặc Kubernetes. Dưới đây là cách cài đặt bằng Docker:</p>
+                        <div class="code-block" data-code-content="git clone https://github.com/ansible/awx.git&#x0A;cd awx/installer&#x0A;ansible-playbook -i inventory install.yml">
+                            <button class="copy-btn">Sao chép</button>
+                            <pre><code class="language-bash">git clone https://github.com/ansible/awx.git
+cd awx/installer
+ansible-playbook -i inventory install.yml</code></pre>
+                        </div>
+
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Các tính năng chính</h3>
+                        <ul class="list-disc list-inside text-slate-600 space-y-2">
+                            <li><strong>Quản lý Inventory:</strong> Tạo và quản lý inventory thông qua giao diện web.</li>
+                            <li><strong>Quản lý Playbook:</strong> Tải lên, chỉnh sửa và chạy playbook từ giao diện web.</li>
+                            <li><strong>Lập lịch:</strong> Lên lịch chạy các playbook tự động.</li>
+                            <li><strong>Báo cáo:</strong> Theo dõi và báo cáo kết quả thực thi playbook.</li>
+                            <li><strong>Phân quyền:</strong> Quản lý quyền truy cập và phân quyền người dùng.</li>
+                        </ul>
+
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Tạo Job Template</h3>
+                        <p class="text-slate-600 mb-2">Job Template là cách để định nghĩa và chạy playbook trong AWX. Dưới đây là các bước tạo một Job Template:</p>
+                        <ol class="list-decimal list-inside text-slate-600 space-y-2">
+                            <li>Truy cập AWX web interface</li>
+                            <li>Đi tới Templates > Job Templates</li>
+                            <li>Nhấp vào nút "Add"</li>
+                            <li>Điền thông tin:
+                                <ul class="list-disc list-inside ml-6 mt-2">
+                                    <li>Name: Tên của job template</li>
+                                    <li>Job Type: Run</li>
+                                    <li>Inventory: Chọn inventory phù hợp</li>
+                                    <li>Project: Chọn project chứa playbook</li>
+                                    <li>Playbook: Chọn playbook cần chạy</li>
+                                    <li>Credentials: Chọn credentials cần thiết</li>
+                                </ul>
+                            </li>
+                        </ol>
+
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">Lập lịch chạy tự động</h3>
+                        <p class="text-slate-600 mb-2">AWX cho phép bạn lập lịch chạy các job template tự động:</p>
+                        <ol class="list-decimal list-inside text-slate-600 space-y-2">
+                            <li>Chọn job template cần lập lịch</li>
+                            <li>Nhấp vào nút "Schedule"</li>
+                            <li>Điền thông tin lịch:
+                                <ul class="list-disc list-inside ml-6 mt-2">
+                                    <li>Name: Tên của lịch</li>
+                                    <li>Start Date/Time: Thời gian bắt đầu</li>
+                                    <li>Repeat: Tần suất lặp lại (hàng ngày, hàng tuần, v.v.)</li>
+                                    <li>End Date/Time: Thời gian kết thúc (tùy chọn)</li>
+                                </ul>
+                            </li>
+                        </ol>
+
+                        <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-2">API và Tích hợp</h3>
+                        <p class="text-slate-600 mb-2">AWX cung cấp REST API để tích hợp với các công cụ khác:</p>
+                        <div class="code-block" data-code-content="curl -X POST \\&#x0A;  -H &quot;Content-Type: application/json&quot; \\&#x0A;  -u admin:password \\&#x0A;  -d &apos;{&quot;name&quot;: &quot;My Job&quot;, &quot;job_type&quot;: &quot;run&quot;, &quot;inventory&quot;: 1, &quot;project&quot;: 1, &quot;playbook&quot;: &quot;playbook.yml&quot;}&apos; \\&#x0A;  http://awx.example.com/api/v2/job_templates/">
+                            <button class="copy-btn">Sao chép</button>
+                            <pre><code class="language-bash">curl -X POST \
+  -H "Content-Type: application/json" \
+  -u admin:password \
+  -d '{"name": "My Job", "job_type": "run", "inventory": 1, "project": 1, "playbook": "playbook.yml"}' \
+  http://awx.example.com/api/v2/job_templates/</code></pre>
+                        </div>
+                    `
                 }
             ];
 
